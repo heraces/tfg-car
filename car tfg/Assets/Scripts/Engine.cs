@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -6,11 +7,13 @@ public class Engine : MonoBehaviour
 {
     [SerializeField]
     private engine_diagram _engine;
-    private float powerfactor = 1;
-    private short rpm = 0;
+    private int gas_power;
+    private float acc;
+    private float rpm = 0;
     private float cc_cylinder;
     private short torque;
     private short hp;
+    private float speed;
 
     void Start()
     {
@@ -24,26 +27,28 @@ public class Engine : MonoBehaviour
 
         if (_engine)
         {
+            if (!_engine.gas) { gas_power = 9000; }
+            else { gas_power = 9000; }
+
             rpm = 500;
             cc_cylinder = _engine.cc / _engine.cylinder_number;
             StartCoroutine(revolution());
         }
     }
-
     private IEnumerator revolution() {
 
+        float rpm = 500;
         while (true)
         {
             if (Input.GetKey(KeyCode.W))
             {
                 //formula to accelerate
-                powerfactor = _engine.max_rev / rpm;
-                Debug.Log(powerfactor);
+                acc = cc_cylinder * gas_power /10;
+                Debug.Log(acc);
             }
-            rpm= (short)(powerfactor * rpm);
-            Debug.Log("car has" + rpm + "rpm");
+            rpm += 3;
             //an explosion is gonna occur every 60/(rpm*no_of_cylinders) seconds
-            yield return new WaitForSeconds(60 / (rpm * _engine.cylinder_number));
+            yield return new WaitForSeconds(1/(rpm/60));
         }
     }
     // cc = 

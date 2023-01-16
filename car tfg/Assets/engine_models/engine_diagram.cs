@@ -1,10 +1,9 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 [CreateAssetMenu(fileName ="New engine", menuName ="Add engine")]
 public class engine_diagram : ScriptableObject
 {
+    public bool gas; // 0 gas, 1 diesel
     public short cc;
     public short cylinder_number;
     public short compress_ratio;
