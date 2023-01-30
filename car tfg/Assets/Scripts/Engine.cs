@@ -2,11 +2,17 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Audio;
 
 public class Engine : MonoBehaviour
 {
+    //retreaving values from scriptable object
     [SerializeField]
     private engine_diagram _engine;
+
+    public suspension_stats suspension;
+    public Car_model car;
+
     private int gas_power;
     private float acc;
     private float rpm = 0;
@@ -14,11 +20,18 @@ public class Engine : MonoBehaviour
     private short torque;
     private short hp;
     private float speed = 5;
+    private AudioSource s;
 
-    private Vector3 past_velocity;
     private float turn_angle = 30;
     private Rigidbody _rigidbody;
     private float window_size;
+
+    private float ackerman_angle_left;
+    private float ackerman_angle_right;
+
+    private sus_physics right_wheel;
+    private sus_physics left_wheel;
+
 
     //rozamiento
     //depende de: coeficiente de la rueda * coeficiente del suelo
@@ -35,9 +48,24 @@ public class Engine : MonoBehaviour
         //engine brake sounds lower thant engine accelerating
         //high rev sounds higher than low rev
 
+
+        s = GetComponent<AudioSource>();
+
+        //soudn hz = rpm/60
         window_size = Screen.width/2;
 
         _rigidbody = GetComponent<Rigidbody>();
+        foreach(sus_physics item in GetComponentsInChildren<sus_physics>())
+        {
+            if (item.isLeft()) 
+            {
+                left_wheel = item;
+            }
+            else if (item.isRight())
+            {
+                right_wheel = item;
+            }
+        }
 
         if (_engine)
         {
@@ -47,27 +75,71 @@ public class Engine : MonoBehaviour
 
             rpm = 500;
             cc_cylinder = _engine.cc / _engine.cylinder_number;
-            StartCoroutine(revolution());
+            //StartCoroutine(revolution());
         }
     }
     private IEnumerator revolution() {
 
-        float rpm = 500;
+        float rps = 100000; // rpm/60 1 rv/s * 360dg/rv 
+        short fire_stage = 0;
+        float angle = 0;
+        //calculates the firing time of each piston during this frame and calls a threat to make the sound
         while (true)
         {
-            if (Input.GetKey(KeyCode.W))
+            angle = 0;
+            while (angle < _engine.firing_order[fire_stage])
             {
-                //formula to accelerate
-                acc = cc_cylinder * gas_power /10;
+                angle += 1;
+                yield return new WaitForSeconds(1/(360*rps));
+
             }
-            rpm += 3;
-            //an explosion is gonna occur every 60/(rpm*no_of_cylinders) seconds
-            yield return new WaitForSeconds(1/(rpm/60));
+            fire_stage += 1;
+            if (fire_stage >= _engine.cylinder_number)
+            {
+                fire_stage = 0;
+            }
+            s.Play();
         }
     }
 
     private void Update()
     {
+        //ackerman steering 
+        //actual steering 
+        if (Mathf.Abs(_rigidbody.velocity.magnitude) > 0)
+        {
+            divider = -(window_size - Input.mousePosition.x) / window_size;
+            if(divider > 0)
+            {
+                ackerman_angle_left = Mathf.Rad2Deg * Mathf.Atan(car.wheelBase / (car.rearTrack + car.turn_radius) * divider);
+                ackerman_angle_right = Mathf.Rad2Deg * Mathf.Atan(car.wheelBase / (car.rearTrack - car.turn_radius) * divider);
+            }
+            else if(divider < 0)
+            {
+                //car.wheelBase/car.rearTrack+car.turnRadius will be calculated directly in the scriptable object
+                ackerman_angle_left = Mathf.Rad2Deg * Mathf.Atan(car.wheelBase / (car.rearTrack - car.turn_radius) * divider);
+                ackerman_angle_right = Mathf.Rad2Deg * Mathf.Atan(car.wheelBase / (car.rearTrack + car.turn_radius) * divider);
+            }
+            else
+            {
+                ackerman_angle_left = 0;
+                ackerman_angle_right = 0;
+            }
+
+
+            left_wheel.ackerman_angle(ackerman_angle_left);
+            right_wheel.ackerman_angle(ackerman_angle_right);
+
+            transform.Rotate(new Vector3(0, transform.rotation.y + turn_angle * divider * _rigidbody.velocity.magnitude, 0) * Time.deltaTime);
+            _rigidbody.velocity = Vector3.Lerp(_rigidbody.velocity, _rigidbody.velocity * 9 / 10, Time.deltaTime * 10);
+        }
+        //ackerman steering 
+        //actual steering 
+    }
+
+    private void FixedUpdate()
+    {
+        //acceleration
         if (Input.GetKey(KeyCode.W))
         {
             //_rigidbody.velocity = Vector3.zero;
@@ -82,18 +154,7 @@ public class Engine : MonoBehaviour
                 _rigidbody.velocity = Vector3.zero;
             }
         }
-    }
-
-    private void FixedUpdate()
-    {
-        if (Mathf.Abs(_rigidbody.velocity.magnitude) > 0)
-        {
-            divider = -(window_size - Input.mousePosition.x) / window_size;
-            //targetRotation = new Vector3(0, transform.rotation.y + turn_angle * divider, 0);
-            Vector3 past_rotation = transform.forward;
-            transform.Rotate(new Vector3(0, transform.rotation.y + turn_angle * divider*_rigidbody.velocity.magnitude, 0) * Time.deltaTime);
-            _rigidbody.velocity = Vector3.Lerp(_rigidbody.velocity, _rigidbody.velocity*9/10, Time.deltaTime * 10);
-        }
+        //acceleration 
     }
 
 }

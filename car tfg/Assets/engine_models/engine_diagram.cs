@@ -9,6 +9,9 @@ public class engine_diagram : ScriptableObject
     public short compress_ratio;
     public short shape; //angle of the engine, 0 means in line engine
 
+    public float[] firing_order;
+    public AnimationCurve torque_curve;
+
     public bool has_turbo;
     public short low_rev_turbo;
     public short high_rev_turbo;
