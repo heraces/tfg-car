@@ -32,6 +32,7 @@ public class Engine : MonoBehaviour
     private sus_physics right_wheel;
     private sus_physics left_wheel;
 
+    private short gear = 1;
 
     //rozamiento
     //depende de: coeficiente de la rueda * coeficiente del suelo
@@ -130,11 +131,11 @@ public class Engine : MonoBehaviour
             left_wheel.ackerman_angle(ackerman_angle_left);
             right_wheel.ackerman_angle(ackerman_angle_right);
 
-            transform.Rotate(new Vector3(0, transform.rotation.y + turn_angle * divider * _rigidbody.velocity.magnitude, 0) * Time.deltaTime);
-            _rigidbody.velocity = Vector3.Lerp(_rigidbody.velocity, _rigidbody.velocity * 9 / 10, Time.deltaTime * 10);
+            transform.Rotate(new Vector3(0, transform.rotation.y + turn_angle * divider, 0) * Time.deltaTime);
         }
         //ackerman steering 
         //actual steering 
+
     }
 
     private void FixedUpdate()
@@ -142,10 +143,18 @@ public class Engine : MonoBehaviour
         //acceleration
         if (Input.GetKey(KeyCode.W))
         {
-            //_rigidbody.velocity = Vector3.zero;
-            Vector3 newVel = _rigidbody.velocity + transform.forward * speed;
-            _rigidbody.velocity = Vector3.Lerp(_rigidbody.velocity, newVel, Time.deltaTime * 10);
+            // mass = wheel_rad * rpm*torque*car
+            float force = _engine.torque_curve.Evaluate(rpm) * car.tranmision[gear] * rpm * car.wheel_rad;
+            Debug.Log(rpm);
+            Debug.Log(force);
+            _rigidbody.AddForce(transform.forward * force);
+
+            int actual_rpm = (int)(_rigidbody.velocity.magnitude / (car.wheel_rad * 3.14 * car.wheel_rad));
+            Debug.Log(actual_rpm);
+            //rpm += (rpm - actual_rpm);
+            //rpm = Mathf.Clamp(rpm, 0, _engine.max_rev);
         }
+
         if (Input.GetKey(KeyCode.S))
         {
             _rigidbody.velocity = Vector3.Lerp(_rigidbody.velocity, Vector3.zero, Time.deltaTime * 10);

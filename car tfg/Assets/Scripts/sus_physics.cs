@@ -41,7 +41,6 @@ public class sus_physics : MonoBehaviour
    
     void FixedUpdate()
     {
-        Debug.DrawRay(transform.position, transform.forward);
         if(Physics.Raycast(transform.position, -transform.up, out RaycastHit hit, maxLength + wheelRadius))
         {
             lastLength = springLength;
@@ -64,7 +63,6 @@ public class sus_physics : MonoBehaviour
         springStiffness = sus.springStiffness;
         damperStiffness = sus.damperStiffness;
         wheelRadius = transform.root.GetComponent<Engine>().car.wheel_rad;
-        Debug.Log(restLength + "dd" + springStiffness + "s"+ springLength + "s" + damperStiffness + "s" + wheelRadius) ;
     }
 
     public bool isLeft()
