@@ -143,16 +143,21 @@ public class Engine : MonoBehaviour
         //acceleration
         if (Input.GetKey(KeyCode.W))
         {
-            // mass = wheel_rad * rpm*torque*car
-            float force = _engine.torque_curve.Evaluate(rpm) * car.tranmision[gear] * rpm * car.wheel_rad;
-            Debug.Log(rpm);
-            Debug.Log(force);
-            _rigidbody.AddForce(transform.forward * force);
+            // mass *10 = wheel_rad * rpm*torque*car
+            //if mass >
 
-            int actual_rpm = (int)(_rigidbody.velocity.magnitude / (car.wheel_rad * 3.14 * car.wheel_rad));
-            Debug.Log(actual_rpm);
-            //rpm += (rpm - actual_rpm);
-            //rpm = Mathf.Clamp(rpm, 0, _engine.max_rev);
+            int target_rpm = _engine.max_rev;
+            Debug.Log(rpm);
+            float tecnical_rpm = (int)(_rigidbody.velocity.magnitude * car.wheel_rad * 2 * 3.14 * car.tranmision[gear]/60); // speed * r^2 * 3.14 = rpm / 60 * gear ratio
+            if(tecnical_rpm < target_rpm)
+            {
+                float force = _engine.torque_curve.Evaluate(rpm) * car.tranmision[gear] * car.wheel_rad * rpm / 60;
+                Debug.Log(tecnical_rpm);
+                _rigidbody.AddForce(transform.forward * force);
+            }
+
+            rpm += rpm - tecnical_rpm;
+            rpm = Mathf.Clamp(rpm, 0, _engine.max_rev);
         }
 
         if (Input.GetKey(KeyCode.S))

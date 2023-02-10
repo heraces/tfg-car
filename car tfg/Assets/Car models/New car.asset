@@ -13,7 +13,12 @@ MonoBehaviour:
   m_Name: New car
   m_EditorClassIdentifier: 
   car: {fileID: 0}
-  tranmision: []
+  tranmision:
+  - 3
+  - 2
+  - 1.5
+  - 1
+  - 0.8
   wheel_rad: 0.33
   weight: 1000
   wheelBase: 2.5
