@@ -147,16 +147,19 @@ public class Engine : MonoBehaviour
             //if mass >
 
             int target_rpm = _engine.max_rev;
-            Debug.Log(rpm);
-            float tecnical_rpm = (int)(_rigidbody.velocity.magnitude * car.wheel_rad * 2 * 3.14 * car.tranmision[gear]/60); // speed * r^2 * 3.14 = rpm / 60 * gear ratio
+            // V = w *r / w = angular velocity w = 2*pi*rps 
+            //rps = rpm/60
+            // V = 2*pi*rpm*r/60 -> rpm = v*60/2*pi*r
+            float tecnical_rpm = (float)(_rigidbody.velocity.magnitude * 60/ (car.wheel_rad * 2 * 3.14 * car.tranmision[gear])); 
+            //3.6 m/s = 1km/h
             if(tecnical_rpm < target_rpm)
             {
-                float force = _engine.torque_curve.Evaluate(rpm) * car.tranmision[gear] * car.wheel_rad * rpm / 60;
+                float force = _engine.torque_curve.Evaluate(rpm) * car.tranmision[gear] * car.wheel_rad;
                 Debug.Log(tecnical_rpm);
-                _rigidbody.AddForce(transform.forward * force);
+                _rigidbody.AddForce(transform.forward * 100000);
             }
 
-            rpm += rpm - tecnical_rpm;
+            rpm += Mathf.Abs(rpm - (int)tecnical_rpm);
             rpm = Mathf.Clamp(rpm, 0, _engine.max_rev);
         }
 
