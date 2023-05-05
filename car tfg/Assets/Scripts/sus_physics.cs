@@ -65,15 +65,6 @@ public class sus_physics : MonoBehaviour
         wheelRadius = transform.root.GetComponent<Engine>().car.wheel_rad;
     }
 
-    public bool isLeft()
-    {
-        return wheel_Place == wheel_place.FrontLeft;
-    }
-    public bool isRight()
-    {
-        return wheel_Place == wheel_place.FrontRight;
-    }
-
     public void ackerman_angle(float angle)
     {
         transform.localRotation = Quaternion.Euler(transform.localRotation.x, transform.localRotation.y + angle, transform.localRotation.z);

@@ -22,6 +22,9 @@ public class Engine : MonoBehaviour
     private float speed = 5;
     private AudioSource s;
 
+    //to be soterd on a tyre scriptable object
+    private float tire_grip = .8f;
+
     private float turn_angle = 30;
     private Rigidbody _rigidbody;
     private float window_size;
@@ -29,8 +32,10 @@ public class Engine : MonoBehaviour
     private float ackerman_angle_left;
     private float ackerman_angle_right;
 
-    private sus_physics right_wheel;
-    private sus_physics left_wheel;
+    private sus_physics right_front_wheel;
+    private sus_physics left_front_wheel;
+    private sus_physics left_rear_wheel;
+    private sus_physics right_rear_wheel;
 
     private short gear = 1;
 
@@ -58,13 +63,21 @@ public class Engine : MonoBehaviour
         _rigidbody = GetComponent<Rigidbody>();
         foreach(sus_physics item in GetComponentsInChildren<sus_physics>())
         {
-            if (item.isLeft()) 
+            if (item.wheel_Place == sus_physics.wheel_place.FrontLeft) 
             {
-                left_wheel = item;
+                left_front_wheel = item;
             }
-            else if (item.isRight())
+            else if (item.wheel_Place == sus_physics.wheel_place.FrontRight)
             {
-                right_wheel = item;
+                right_front_wheel = item;
+            }
+            else if (item.wheel_Place == sus_physics.wheel_place.BackLeft)
+            {
+                left_rear_wheel = item;
+            }
+            else if (item.wheel_Place == sus_physics.wheel_place.BackRight)
+            {
+                right_rear_wheel = item;
             }
         }
 
@@ -107,32 +120,31 @@ public class Engine : MonoBehaviour
     {
         //ackerman steering 
         //actual steering 
-        if (Mathf.Abs(_rigidbody.velocity.magnitude) > 0)
+        divider = -(window_size - Input.mousePosition.x) / window_size;// gets the position of the mouse
+
+        if (divider > 0)
         {
-            divider = -(window_size - Input.mousePosition.x) / window_size;
-            if(divider > 0)
-            {
-                ackerman_angle_left = Mathf.Rad2Deg * Mathf.Atan(car.wheelBase / (car.rearTrack + car.turn_radius) * divider);
-                ackerman_angle_right = Mathf.Rad2Deg * Mathf.Atan(car.wheelBase / (car.rearTrack - car.turn_radius) * divider);
-            }
-            else if(divider < 0)
-            {
-                //car.wheelBase/car.rearTrack+car.turnRadius will be calculated directly in the scriptable object
-                ackerman_angle_left = Mathf.Rad2Deg * Mathf.Atan(car.wheelBase / (car.rearTrack - car.turn_radius) * divider);
-                ackerman_angle_right = Mathf.Rad2Deg * Mathf.Atan(car.wheelBase / (car.rearTrack + car.turn_radius) * divider);
-            }
-            else
-            {
-                ackerman_angle_left = 0;
-                ackerman_angle_right = 0;
-            }
-
-
-            left_wheel.ackerman_angle(ackerman_angle_left);
-            right_wheel.ackerman_angle(ackerman_angle_right);
-
-            transform.Rotate(new Vector3(0, transform.rotation.y + turn_angle * divider, 0) * Time.deltaTime);
+            ackerman_angle_left = Mathf.Rad2Deg * Mathf.Atan(car.wheelBase / (car.rearTrack + car.turn_radius) * divider);
+            ackerman_angle_right = Mathf.Rad2Deg * Mathf.Atan(car.wheelBase / (car.rearTrack - car.turn_radius) * divider);
         }
+        else if(divider < 0)
+        {
+            //car.wheelBase/car.rearTrack+car.turnRadius will be calculated directly in the scriptable object
+            ackerman_angle_left = Mathf.Rad2Deg * Mathf.Atan(car.wheelBase / (car.rearTrack - car.turn_radius) * divider);
+            ackerman_angle_right = Mathf.Rad2Deg * Mathf.Atan(car.wheelBase / (car.rearTrack + car.turn_radius) * divider);
+        }
+        else
+        {
+            ackerman_angle_left = 0;
+            ackerman_angle_right = 0;
+        }
+
+
+        left_front_wheel.ackerman_angle(ackerman_angle_left);
+        right_front_wheel.ackerman_angle(ackerman_angle_right);
+
+        float steering = turn_angle * divider  ;
+        transform.Rotate(new Vector3(0, transform.rotation.y + steering, 0) * Time.deltaTime);
         //ackerman steering 
         //actual steering 
 
@@ -147,28 +159,36 @@ public class Engine : MonoBehaviour
             //if mass >
 
             int target_rpm = _engine.max_rev;
-            // V = w *r / w = angular velocity w = 2*pi*rps 
-            //rps = rpm/60
-            // V = 2*pi*rpm*r/60 -> rpm = v*60/2*pi*r
-            float tecnical_rpm = (float)(_rigidbody.velocity.magnitude * 60/ (car.wheel_rad * 2 * 3.14 * car.tranmision[gear])); 
+            // V = w *r --- w = angular velocity --- w = rps = rpm/60
+            //float tecnical_rpm = _rigidbody.velocity.magnitude * 60 * car.tranmision[gear]/ (car.wheel_rad* 2* 3.14f); 
+            float tecnical_rpm = _rigidbody.velocity.magnitude * 60 * car.tranmision[gear];
             //3.6 m/s = 1km/h
-            if(tecnical_rpm < target_rpm)
-            {
-                float force = _engine.torque_curve.Evaluate(rpm) * car.tranmision[gear] * car.wheel_rad;
-                Debug.Log(tecnical_rpm);
-                _rigidbody.AddForce(transform.forward * 100000);
-            }
 
-            rpm += Mathf.Abs(rpm - (int)tecnical_rpm);
-            rpm = Mathf.Clamp(rpm, 0, _engine.max_rev);
+            if (tecnical_rpm >= 8000 && gear < car.tranmision.Length-1){ gear++;}
+            else if (tecnical_rpm < 2500 && gear > 0) { gear--; }
+
+            float force = _engine.torque_curve.Evaluate(rpm) * car.tranmision[gear] * car.wheel_rad;
+            float turningForce = _rigidbody.velocity.magnitude;
+
+            _rigidbody.AddForceAtPosition(transform.forward * force * 100, left_rear_wheel.transform.position);
+            _rigidbody.AddForceAtPosition(transform.forward * force * 100, right_rear_wheel.transform.position);
+            //_rigidbody.AddForceAtPosition(left_front_wheel.transform.forward * 1000, left_front_wheel.transform.position);
+            //_rigidbody.AddForceAtPosition(right_front_wheel.transform.forward * 1000, right_front_wheel.transform.position);
+
+            rpm = tecnical_rpm;
+            rpm = Mathf.Clamp(rpm, 1000, _engine.max_rev);
+
         }
 
         if (Input.GetKey(KeyCode.S))
         {
-            _rigidbody.velocity = Vector3.Lerp(_rigidbody.velocity, Vector3.zero, Time.deltaTime * 10);
+            _rigidbody.velocity = Vector3.Lerp(_rigidbody.velocity, Vector3.zero, Time.deltaTime * 2);
+            _rigidbody.angularVelocity = Vector3.Lerp(_rigidbody.angularVelocity, Vector3.zero, Time.deltaTime * 2);
+
             if (_rigidbody.velocity.magnitude < 1)
             {
                 _rigidbody.velocity = Vector3.zero;
+                _rigidbody.angularVelocity = Vector3.zero;
             }
         }
         //acceleration 
