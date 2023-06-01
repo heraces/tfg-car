@@ -4,6 +4,7 @@ public class sus_physics : MonoBehaviour
 {
     public enum wheel_place {FrontLeft, FrontRight, BackLeft, BackRight};
     public wheel_place wheel_Place;
+    public suspension_stats sus;
 
     //referencia al rigidbody del coche para aplicar las fuerzas de la suspension
     private Rigidbody _rigidbody;
@@ -57,14 +58,18 @@ public class sus_physics : MonoBehaviour
 
     private void setStats()
     {
-        suspension_stats sus = transform.root.GetComponent<Engine>().suspension;
         restLength = sus.restLength;
         springTravel = sus.springTravel;
         springStiffness = sus.springStiffness;
         damperStiffness = sus.damperStiffness;
-        wheelRadius = transform.root.GetComponent<Engine>().car.wheel_rad;
+        wheelRadius = .33f;
     }
 
+    public void setSuspension(suspension_stats sus_stats)
+    {
+        sus = sus_stats;
+        setStats();
+    }
     public void ackerman_angle(float angle)
     {
         transform.localRotation = Quaternion.Euler(transform.localRotation.x, transform.localRotation.y + angle, transform.localRotation.z);

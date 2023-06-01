@@ -25,7 +25,7 @@ public class Engine : MonoBehaviour
     //to be soterd on a tyre scriptable object
     private float tire_grip = .8f;
 
-    private float turn_angle = 30;
+    private float turn_angle = 50;
     private Rigidbody _rigidbody;
     private float window_size;
 
@@ -38,6 +38,24 @@ public class Engine : MonoBehaviour
     private sus_physics right_rear_wheel;
 
     private short gear = 1;
+
+    private crosPoint lastCrosPoint = null;
+    private crosPoint thisCrosPoint;
+
+
+
+    [SerializeField]
+    private GameObject buttonContrarreloj;
+    [SerializeField]
+    private GameObject boxesPlace;
+    [SerializeField]
+    private GameObject box;
+    [SerializeField]
+    private GameObject tick;
+    private bool contrarreloj = false;
+    private bool currently_running = false;
+    private int raceIndex = 0;
+    private crosPoint[] controlPoints;
 
     //rozamiento
     //depende de: coeficiente de la rueda * coeficiente del suelo
@@ -56,6 +74,8 @@ public class Engine : MonoBehaviour
 
 
         s = GetComponent<AudioSource>();
+        buttonContrarreloj.SetActive(false);
+
 
         //soudn hz = rpm/60
         window_size = Screen.width/2;
@@ -63,6 +83,7 @@ public class Engine : MonoBehaviour
         _rigidbody = GetComponent<Rigidbody>();
         foreach(sus_physics item in GetComponentsInChildren<sus_physics>())
         {
+            item.setSuspension(suspension);
             if (item.wheel_Place == sus_physics.wheel_place.FrontLeft) 
             {
                 left_front_wheel = item;
@@ -79,6 +100,7 @@ public class Engine : MonoBehaviour
             {
                 right_rear_wheel = item;
             }
+
         }
 
         if (_engine)
@@ -118,6 +140,15 @@ public class Engine : MonoBehaviour
 
     private void Update()
     {
+
+        if (contrarreloj && Input.GetKeyDown("space"))
+        {
+            contrarreloj = false;
+            runbb();
+            buttonContrarreloj.SetActive(false);
+            startContrarreloj(thisCrosPoint.findPath(lastCrosPoint.GetComponent<crosPoint>()));
+
+        }
         //ackerman steering 
         //actual steering 
         divider = -(window_size - Input.mousePosition.x) / window_size;// gets the position of the mouse
@@ -194,4 +225,85 @@ public class Engine : MonoBehaviour
         //acceleration 
     }
 
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.gameObject.GetComponent<crosPoint>())
+        {
+            thisCrosPoint = other.gameObject.GetComponent<crosPoint>();
+            if (!currently_running) {
+
+                if (lastCrosPoint)
+                {
+                    contrarreloj = true; 
+                    buttonContrarreloj.SetActive(true);
+                }
+            }
+            else
+            {
+                if (thisCrosPoint.isTarget)
+                {
+                    raceIndex++;
+                    setNextControl();
+                }
+            }
+        }
+    }
+    private void OnTriggerExit(Collider other)
+    {
+        if (other.gameObject.GetComponent<crosPoint>())
+        {
+            buttonContrarreloj.SetActive(false);
+            contrarreloj = false;
+            lastCrosPoint = thisCrosPoint;
+            //start contrarreloj disapear
+        }
+    }
+    private void startContrarreloj(crosPoint[] controlPoints)
+    {
+        this.controlPoints = controlPoints;
+        raceIndex = 0;
+        foreach(crosPoint item in controlPoints)
+        {
+            GameObject slot = Instantiate(box);
+            slot.transform.SetParent(boxesPlace.transform);
+            slot.transform.localScale = new Vector3(1,1,1);
+        }
+        setNextControl();
+    }
+
+    private void setNextControl()
+    {
+        if (raceIndex >= controlPoints.Length) {
+
+            controlPoints[raceIndex - 1].LightsOff(); 
+            dontRun(); 
+        }
+        else
+        {
+            if (raceIndex > 0)
+            {
+                GameObject green = Instantiate(tick);
+                green.transform.SetParent(boxesPlace.transform.GetChild(raceIndex).transform);
+                green.transform.localPosition = new Vector3(-100, 25, 0);
+                green.transform.localScale = new Vector3(1.4f, 1.4f, 1.4f);
+                controlPoints[raceIndex - 1].LightsOff();
+            }
+            controlPoints[raceIndex].LightsOn();
+        }
+    }
+    private void runbb()
+    {
+        currently_running = true;
+        boxesPlace.SetActive(true);
+        for(int i = 0; i< boxesPlace.transform.childCount; i++)
+        {
+            Destroy(boxesPlace.transform.GetChild(0));
+        }
+    }
+
+    private void dontRun()
+    {
+        currently_running = false;
+        boxesPlace.SetActive(false);
+    }
 }
