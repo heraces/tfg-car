@@ -22,7 +22,7 @@ public class crosPoint : MonoBehaviour
     public crosPoint[] findPath(crosPoint lastPoint)
     {
         lastCrosPoint = lastPoint;
-        crosPoints = GetComponent<crosPoint>().connections;
+        crosPoints = connections;
         number_of_turns = Random.Range(4, 7);
         crosPoint[] newCrosPoints = new crosPoint[number_of_turns];
 

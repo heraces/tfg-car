@@ -52,10 +52,16 @@ public class Engine : MonoBehaviour
     private GameObject box;
     [SerializeField]
     private GameObject tick;
+    [SerializeField]
+    private GameObject contrarrelojArrow;
+    [SerializeField]
+    private endContrarreloj contrarrelojEndPanel;
+
     private bool contrarreloj = false;
     private bool currently_running = false;
     private int raceIndex = 0;
     private crosPoint[] controlPoints;
+    private countDown countDown;
 
     //rozamiento
     //depende de: coeficiente de la rueda * coeficiente del suelo
@@ -75,6 +81,8 @@ public class Engine : MonoBehaviour
 
         s = GetComponent<AudioSource>();
         buttonContrarreloj.SetActive(false);
+        countDown = FindObjectOfType<countDown>();
+        contrarrelojArrow.SetActive(false);
 
 
         //soudn hz = rpm/60
@@ -140,9 +148,14 @@ public class Engine : MonoBehaviour
 
     private void Update()
     {
-
-        if (contrarreloj && Input.GetKeyDown("space"))
+        if (currently_running)
         {
+            Vector3 thaPosition = new Vector3(controlPoints[raceIndex].transform.position.x, transform.position.y, controlPoints[raceIndex].transform.position.z);
+            contrarrelojArrow.transform.LookAt(thaPosition);
+        }
+        else if (contrarreloj && Input.GetKeyDown("space"))
+        {
+            contrarrelojEndPanel.callMe(10f, 5, 5);
             contrarreloj = false;
             runbb();
             buttonContrarreloj.SetActive(false);
@@ -262,7 +275,7 @@ public class Engine : MonoBehaviour
     {
         this.controlPoints = controlPoints;
         raceIndex = 0;
-        foreach(crosPoint item in controlPoints)
+        for(int i = 0; i< controlPoints.Length; i++)
         {
             GameObject slot = Instantiate(box);
             slot.transform.SetParent(boxesPlace.transform);
@@ -276,12 +289,14 @@ public class Engine : MonoBehaviour
         if (raceIndex >= controlPoints.Length) {
 
             controlPoints[raceIndex - 1].LightsOff(); 
+
             dontRun(); 
         }
         else
         {
             if (raceIndex > 0)
             {
+                countDown.AddTime();
                 GameObject green = Instantiate(tick);
                 green.transform.SetParent(boxesPlace.transform.GetChild(raceIndex).transform);
                 green.transform.localPosition = new Vector3(-100, 25, 0);
@@ -295,15 +310,33 @@ public class Engine : MonoBehaviour
     {
         currently_running = true;
         boxesPlace.SetActive(true);
-        for(int i = 0; i< boxesPlace.transform.childCount; i++)
+        contrarrelojArrow.SetActive(true);
+        int pp = boxesPlace.transform.childCount;
+        foreach (Transform child in boxesPlace.GetComponentsInChildren<Transform>())
         {
-            Destroy(boxesPlace.transform.GetChild(0));
+            if(child.parent == boxesPlace.transform)  Destroy(child.gameObject);
         }
+        countDown.startCounting();
     }
 
-    private void dontRun()
+    public void dontRun()
     {
+        if (controlPoints != null)
+        {
+            foreach (crosPoint item in controlPoints)
+            {
+                item.LightsOff();
+            }
+
+            contrarrelojEndPanel.callMe(10f,5,5);
+
+        }
+        contrarrelojArrow.SetActive(false);
         currently_running = false;
         boxesPlace.SetActive(false);
+    }
+
+    private void endContrarreloj()
+    {
     }
 }
