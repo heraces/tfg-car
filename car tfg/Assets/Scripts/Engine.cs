@@ -28,6 +28,7 @@ public class Engine : MonoBehaviour
     private float turn_angle = 50;
     private Rigidbody _rigidbody;
     private float window_size;
+    private float backSpeed = 500f;
 
     private float ackerman_angle_left;
     private float ackerman_angle_right;
@@ -44,18 +45,15 @@ public class Engine : MonoBehaviour
 
 
 
+    [SerializeField] private GameObject buttonContrarreloj;
+    [SerializeField] private GameObject boxesPlace;
+    [SerializeField] private GameObject box;
+    [SerializeField] private GameObject tick;
+    [SerializeField] private GameObject contrarrelojArrow;
+    [SerializeField] private endContrarreloj contrarrelojEndPanel;
+
     [SerializeField]
-    private GameObject buttonContrarreloj;
-    [SerializeField]
-    private GameObject boxesPlace;
-    [SerializeField]
-    private GameObject box;
-    [SerializeField]
-    private GameObject tick;
-    [SerializeField]
-    private GameObject contrarrelojArrow;
-    [SerializeField]
-    private endContrarreloj contrarrelojEndPanel;
+    private AnimationCurve grip;
 
     private bool contrarreloj = false;
     private bool currently_running = false;
@@ -155,7 +153,6 @@ public class Engine : MonoBehaviour
         }
         else if (contrarreloj && Input.GetKeyDown("space"))
         {
-            contrarrelojEndPanel.callMe(10f, 5, 5);
             contrarreloj = false;
             runbb();
             buttonContrarreloj.SetActive(false);
@@ -183,12 +180,11 @@ public class Engine : MonoBehaviour
             ackerman_angle_right = 0;
         }
 
-
         left_front_wheel.ackerman_angle(ackerman_angle_left);
         right_front_wheel.ackerman_angle(ackerman_angle_right);
 
         float steering = turn_angle * divider  ;
-        transform.Rotate(new Vector3(0, transform.rotation.y + steering, 0) * Time.deltaTime);
+        //transform.Rotate(new Vector3(0, transform.rotation.y + steering, 0) * Time.deltaTime);
         //ackerman steering 
         //actual steering 
 
@@ -196,7 +192,37 @@ public class Engine : MonoBehaviour
 
     private void FixedUpdate()
     {
-        //acceleration
+        foreach (sus_physics item in GetComponentsInChildren<sus_physics>())
+        {
+            Vector3 steeringDirR = item.transform.right;
+            float steeringVelR = Vector3.Dot(steeringDirR, _rigidbody.GetPointVelocity(item.transform.position));
+            float desiredVelchangeR = -steeringVelR * .1f;
+            float accR = desiredVelchangeR / Time.fixedDeltaTime;
+
+
+            _rigidbody.AddForceAtPosition(steeringDirR * accR * _rigidbody.mass / 4, item.transform.position);
+
+        }
+
+        //turning
+            /*
+            Vector3 steeringDir = left_front_wheel.transform.right;
+            float steeringVel = Vector3.Dot(steeringDir, _rigidbody.GetPointVelocity(transform.position));
+            Debug.Log(steeringVel + "wwww" + _rigidbody.GetPointVelocity(transform.position));
+            float desiredVelchange = -steeringVel * grip.Evaluate(_rigidbody.velocity.magnitude);
+            float acc = desiredVelchange / Time.fixedDeltaTime;
+
+            Vector3 steeringDirR = right_front_wheel.transform.right;
+            float steeringVelR = Vector3.Dot(steeringDirR, _rigidbody.GetPointVelocity(transform.position));
+            float desiredVelchangeR = -steeringVelR * grip.Evaluate(_rigidbody.velocity.magnitude);
+            float accR = desiredVelchangeR / Time.fixedDeltaTime;
+
+
+            _rigidbody.AddForceAtPosition(steeringDir * acc * _rigidbody.mass/4, left_front_wheel.transform.position);
+            _rigidbody.AddForceAtPosition(steeringDirR * accR * _rigidbody.mass / 4, right_front_wheel.transform.position);
+
+        */
+            //acceleration
         if (Input.GetKey(KeyCode.W))
         {
             // mass *10 = wheel_rad * rpm*torque*car
@@ -212,12 +238,9 @@ public class Engine : MonoBehaviour
             else if (tecnical_rpm < 2500 && gear > 0) { gear--; }
 
             float force = _engine.torque_curve.Evaluate(rpm) * car.tranmision[gear] * car.wheel_rad;
-            float turningForce = _rigidbody.velocity.magnitude;
 
-            _rigidbody.AddForceAtPosition(transform.forward * force * 100, left_rear_wheel.transform.position);
-            _rigidbody.AddForceAtPosition(transform.forward * force * 100, right_rear_wheel.transform.position);
-            //_rigidbody.AddForceAtPosition(left_front_wheel.transform.forward * 1000, left_front_wheel.transform.position);
-            //_rigidbody.AddForceAtPosition(right_front_wheel.transform.forward * 1000, right_front_wheel.transform.position);
+            _rigidbody.AddForceAtPosition(left_rear_wheel.transform.forward * force / Time.fixedDeltaTime, left_rear_wheel.transform.position);
+            _rigidbody.AddForceAtPosition(right_rear_wheel.transform.forward * force /Time.fixedDeltaTime, right_rear_wheel.transform.position);
 
             rpm = tecnical_rpm;
             rpm = Mathf.Clamp(rpm, 1000, _engine.max_rev);
@@ -231,8 +254,8 @@ public class Engine : MonoBehaviour
 
             if (_rigidbody.velocity.magnitude < 1)
             {
-                _rigidbody.velocity = Vector3.zero;
-                _rigidbody.angularVelocity = Vector3.zero;
+                _rigidbody.AddForceAtPosition(transform.forward * -backSpeed * 100, left_rear_wheel.transform.position);
+                _rigidbody.AddForceAtPosition(transform.forward * -backSpeed * 100, right_rear_wheel.transform.position);
             }
         }
         //acceleration 
@@ -334,9 +357,5 @@ public class Engine : MonoBehaviour
         contrarrelojArrow.SetActive(false);
         currently_running = false;
         boxesPlace.SetActive(false);
-    }
-
-    private void endContrarreloj()
-    {
     }
 }

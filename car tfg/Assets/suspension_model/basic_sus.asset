@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d6b235eb814382f41a97d654f9df987b, type: 3}
   m_Name: basic_sus
   m_EditorClassIdentifier: 
-  restLength: 0.4
+  restLength: 0.5
   springTravel: 0.2
   springStiffness: 30000
   damperStiffness: 4000

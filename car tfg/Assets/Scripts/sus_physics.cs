@@ -52,6 +52,7 @@ public class sus_physics : MonoBehaviour
             damperForce = damperStiffness * springVelocity;
 
             suspensionForce = (springForce + damperForce) * transform.up;
+            Debug.DrawRay(suspensionForce, this.transform.position);
             _rigidbody.AddForceAtPosition(suspensionForce, hit.point);
         }
     }
