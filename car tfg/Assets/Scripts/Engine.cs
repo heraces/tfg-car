@@ -52,6 +52,9 @@ public class Engine : MonoBehaviour
     [SerializeField] private GameObject contrarrelojArrow;
     [SerializeField] private endContrarreloj contrarrelojEndPanel;
 
+
+    [SerializeField] private GameObject needle;
+
     [SerializeField]
     private AnimationCurve grip;
 
@@ -61,6 +64,8 @@ public class Engine : MonoBehaviour
     private crosPoint[] controlPoints;
     private countDown countDown;
 
+    private AudioSource carSound;
+
     //rozamiento
     //depende de: coeficiente de la rueda * coeficiente del suelo
 
@@ -68,6 +73,7 @@ public class Engine : MonoBehaviour
     private float divider;
     void Start()
     {
+            
         //hp = torque* radiands/sec(not rpm)
 
         //base dull sinewave sound +
@@ -188,6 +194,13 @@ public class Engine : MonoBehaviour
         //ackerman steering 
         //actual steering 
 
+        if(tag == "Player")
+        {
+            float rpmPor1000 = rpm / 1000 * 40;
+            needle.transform.rotation = Quaternion.Euler(new Vector3(0, 0, 30 - rpmPor1000));
+            
+        }
+
     }
 
     private void FixedUpdate()
@@ -205,45 +218,45 @@ public class Engine : MonoBehaviour
         }
 
         //turning
-            /*
-            Vector3 steeringDir = left_front_wheel.transform.right;
-            float steeringVel = Vector3.Dot(steeringDir, _rigidbody.GetPointVelocity(transform.position));
-            Debug.Log(steeringVel + "wwww" + _rigidbody.GetPointVelocity(transform.position));
-            float desiredVelchange = -steeringVel * grip.Evaluate(_rigidbody.velocity.magnitude);
-            float acc = desiredVelchange / Time.fixedDeltaTime;
+        /*
+        Vector3 steeringDir = left_front_wheel.transform.right;
+        float steeringVel = Vector3.Dot(steeringDir, _rigidbody.GetPointVelocity(transform.position));
+        Debug.Log(steeringVel + "wwww" + _rigidbody.GetPointVelocity(transform.position));
+        float desiredVelchange = -steeringVel * grip.Evaluate(_rigidbody.velocity.magnitude);
+        float acc = desiredVelchange / Time.fixedDeltaTime;
 
-            Vector3 steeringDirR = right_front_wheel.transform.right;
-            float steeringVelR = Vector3.Dot(steeringDirR, _rigidbody.GetPointVelocity(transform.position));
-            float desiredVelchangeR = -steeringVelR * grip.Evaluate(_rigidbody.velocity.magnitude);
-            float accR = desiredVelchangeR / Time.fixedDeltaTime;
+        Vector3 steeringDirR = right_front_wheel.transform.right;
+        float steeringVelR = Vector3.Dot(steeringDirR, _rigidbody.GetPointVelocity(transform.position));
+        float desiredVelchangeR = -steeringVelR * grip.Evaluate(_rigidbody.velocity.magnitude);
+        float accR = desiredVelchangeR / Time.fixedDeltaTime;
 
 
-            _rigidbody.AddForceAtPosition(steeringDir * acc * _rigidbody.mass/4, left_front_wheel.transform.position);
-            _rigidbody.AddForceAtPosition(steeringDirR * accR * _rigidbody.mass / 4, right_front_wheel.transform.position);
+        _rigidbody.AddForceAtPosition(steeringDir * acc * _rigidbody.mass/4, left_front_wheel.transform.position);
+        _rigidbody.AddForceAtPosition(steeringDirR * accR * _rigidbody.mass / 4, right_front_wheel.transform.position);
 
-        */
-            //acceleration
+    */
+        //acceleration
+
+
+        //tracking rpm
+
+        // V = w *r --- w = angular velocity --- w = rps = rpm/60
+        //float tecnical_rpm = _rigidbody.velocity.magnitude * 60 * car.tranmision[gear]/ (car.wheel_rad* 2* 3.14f); 
+        float tecnical_rpm = _rigidbody.velocity.magnitude * 60 * car.tranmision[gear];
+        //3.6 m/s = 1km/h
+
+        if (tecnical_rpm >= 8000 && gear < car.tranmision.Length - 1) { gear++; }
+        else if (tecnical_rpm < 2500 && gear > 0) { gear--; }
+
+        rpm = tecnical_rpm;
+        rpm = Mathf.Clamp(rpm, 1000, _engine.max_rev);
+
         if (Input.GetKey(KeyCode.W))
         {
-            // mass *10 = wheel_rad * rpm*torque*car
-            //if mass >
-
-            int target_rpm = _engine.max_rev;
-            // V = w *r --- w = angular velocity --- w = rps = rpm/60
-            //float tecnical_rpm = _rigidbody.velocity.magnitude * 60 * car.tranmision[gear]/ (car.wheel_rad* 2* 3.14f); 
-            float tecnical_rpm = _rigidbody.velocity.magnitude * 60 * car.tranmision[gear];
-            //3.6 m/s = 1km/h
-
-            if (tecnical_rpm >= 8000 && gear < car.tranmision.Length-1){ gear++;}
-            else if (tecnical_rpm < 2500 && gear > 0) { gear--; }
-
             float force = _engine.torque_curve.Evaluate(rpm) * car.tranmision[gear] * car.wheel_rad;
 
             _rigidbody.AddForceAtPosition(left_rear_wheel.transform.forward * force / Time.fixedDeltaTime, left_rear_wheel.transform.position);
             _rigidbody.AddForceAtPosition(right_rear_wheel.transform.forward * force /Time.fixedDeltaTime, right_rear_wheel.transform.position);
-
-            rpm = tecnical_rpm;
-            rpm = Mathf.Clamp(rpm, 1000, _engine.max_rev);
 
         }
 
