@@ -6,10 +6,11 @@ public class self_driving : MonoBehaviour
 {
     private crosPoint crosuPoint;
     private Vector3 vektor;
-    private float speed = .05f;
-    private Collider cross;
+    private crosPoint targetCrossPoint;
 
-    private float force = 200;
+    private float turn_speed = 15;
+
+    private float force = 60;
     private Rigidbody _rigidbody;
 
 
@@ -18,12 +19,16 @@ public class self_driving : MonoBehaviour
     private sus_physics left_rear_wheel;
     private sus_physics right_rear_wheel;
 
+
     void Start()
     {
         crosuPoint = FindObjectOfType<crosPoint>();
-        cross = crosuPoint.GetComponent<Collider>();
-        vektor = crosuPoint.transform.position;
-        
+        targetCrossPoint = crosuPoint;
+
+        findFirstPoint();
+        vektor = targetCrossPoint.transform.position;
+        //findRout();
+
         _rigidbody = GetComponent<Rigidbody>();
         foreach (sus_physics item in GetComponentsInChildren<sus_physics>())
         {
@@ -50,9 +55,18 @@ public class self_driving : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        //transform.position = Vector3.MoveTowards(transform.position, vektor, speed);
-        //transform.LookAt(vektor);
+        Vector3 relativePosition = vektor - transform.position;
+
+        if (Vector3.SignedAngle(transform.forward, relativePosition, Vector3.up) > 0) {
+            transform.Rotate(new Vector3(0, transform.rotation.y + turn_speed, 0) * Time.deltaTime); 
+        }
+
+        else if (Vector3.SignedAngle(transform.forward, relativePosition, Vector3.up)< 0)
+        {
+            transform.Rotate(new Vector3(0, transform.rotation.y - turn_speed, 0) * Time.deltaTime);
+        }
     }
+
     private void FixedUpdate()
     {
         foreach (sus_physics item in GetComponentsInChildren<sus_physics>())
@@ -67,7 +81,68 @@ public class self_driving : MonoBehaviour
 
         }
 
-        //_rigidbody.AddForceAtPosition(left_rear_wheel.transform.forward * force, left_rear_wheel.transform.position);
-        //_rigidbody.AddForceAtPosition(right_rear_wheel.transform.forward * force, right_rear_wheel.transform.position);
+        _rigidbody.AddForceAtPosition(left_rear_wheel.transform.forward * force / Time.fixedDeltaTime, left_rear_wheel.transform.position);
+        _rigidbody.AddForceAtPosition(right_rear_wheel.transform.forward * force / Time.fixedDeltaTime, right_rear_wheel.transform.position); 
+    }
+
+    private void findFirstPoint()
+    {
+        foreach(crosPoint point in FindObjectsOfType<crosPoint>())
+        {
+            if(Vector3.Distance(transform.position, point.transform.position) < Vector3.Distance(transform.position, targetCrossPoint.transform.position))
+            {
+                targetCrossPoint = point;
+            }
+        }
+    }
+
+    private void findRout()
+    {
+        crosPoint actualPoint = targetCrossPoint;
+        List<crosPoint> route = findRout(actualPoint, new List<crosPoint>());
+        for(int i = 0; i < route.Count; i++)
+        {
+            Debug.Log(route[i]);
+        }
+
+        Debug.Log(targetCrossPoint);
+        Debug.Log(crosuPoint);
+    }
+    private List<crosPoint> findRout(crosPoint actualPoint, List<crosPoint> list)
+    {
+
+        actualPoint.visited = true;
+        if (actualPoint == crosuPoint)
+        {
+            list.Add(actualPoint);
+            actualPoint.visited = false;
+            return list;
+        }
+        foreach( crosPoint line in actualPoint.connections)
+        {
+            if (!line.visited)
+            {
+                findRout(line, list);
+            }
+        }
+        return list;
+    }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if(other.gameObject == targetCrossPoint.gameObject)
+        {
+            targetCrossPoint = other.GetComponent<crosPoint>().connections[Random.Range(0, targetCrossPoint.connections.Length)];
+            vektor = targetCrossPoint.transform.position;
+            Vector3 relativePosition = vektor - transform.position;
+            while(Vector3.Angle(transform.forward, relativePosition) > 160)
+            {
+                targetCrossPoint = other.GetComponent<crosPoint>().connections[Random.Range(0, targetCrossPoint.connections.Length)];
+                vektor = targetCrossPoint.transform.position;
+                relativePosition = vektor - transform.position;
+            }
+
+            Debug.Log(targetCrossPoint);
+        }
     }
 }

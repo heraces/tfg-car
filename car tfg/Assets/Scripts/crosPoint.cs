@@ -6,6 +6,7 @@ public class crosPoint : MonoBehaviour
 {
     public crosPoint[] connections;
 
+    public bool visited = false;
     private GameObject control_spotlight;
     private crosPoint[] crosPoints;
     private crosPoint lastCrosPoint;

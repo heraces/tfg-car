@@ -265,8 +265,8 @@ public class Engine : MonoBehaviour
 
             if (_rigidbody.velocity.magnitude < 1)
             {
-                _rigidbody.AddForceAtPosition(transform.forward * -backSpeed * 100, left_rear_wheel.transform.position);
-                _rigidbody.AddForceAtPosition(transform.forward * -backSpeed * 100, right_rear_wheel.transform.position);
+                _rigidbody.AddForceAtPosition(transform.forward * -backSpeed / Time.fixedDeltaTime, left_rear_wheel.transform.position);
+                _rigidbody.AddForceAtPosition(transform.forward * -backSpeed / Time.fixedDeltaTime, right_rear_wheel.transform.position);
             }
         }
         //acceleration 
