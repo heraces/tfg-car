@@ -15,7 +15,7 @@ public class Engine : MonoBehaviour
 
     private int gas_power;
     private float acc;
-    private float rpm = 0;
+    public float rpm = 0;
     private float cc_cylinder;
     private short torque;
     private short hp;
@@ -63,8 +63,6 @@ public class Engine : MonoBehaviour
     private int raceIndex = 0;
     private crosPoint[] controlPoints;
     private countDown countDown;
-
-    private AudioSource carSound;
 
     //rozamiento
     //depende de: coeficiente de la rueda * coeficiente del suelo
